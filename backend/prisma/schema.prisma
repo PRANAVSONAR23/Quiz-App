@@ -1,0 +1,39 @@
+generator client {
+    provider = "prisma-client-js"
+  }
+  
+  datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+  }
+  
+  model Topic {
+    id          String      @id @default(cuid())
+    title       String      @unique
+    difficulty  Difficulty
+    questions   Question[]
+    createdAt   DateTime    @default(now())
+    updatedAt   DateTime    @updatedAt
+  
+    @@map("topics")
+  }
+  
+  model Question {
+    id             String   @id @default(cuid())
+    questionText   String   @map("question_text")
+    questionImage  String?  @map("question_image")
+    options        Json     // Store as JSON array
+    correctOption  String   @map("correct_option")
+    topicId        String   @map("topic_id")
+    topic          Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+  
+    @@map("questions")
+  }
+  
+  enum Difficulty {
+    easy
+    medium
+    hard
+  }

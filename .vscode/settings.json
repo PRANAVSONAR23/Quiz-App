@@ -1,0 +1,30 @@
+{
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "files.associations": {
+    "*.prisma": "prisma"
+  },
+  "typescript.validate.enable": true,
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma",
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "strings": "off",
+      "other": "off"
+    },
+    "editor.suggest.snippetsPreventQuickSuggestions": false
+  },
+  "typescript.preferences.exclude": [
+    "**/prisma/**/*",
+    "**/*.prisma"
+  ],
+  "typescript.suggest.includeCompletionsForModuleExports": true,
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true
+  }
+}
