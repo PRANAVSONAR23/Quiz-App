@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useQuizStore } from '@/store/quizStore';
 import { useSubmitQuiz } from '@/services/queries';
-import { ChevronLeft, ChevronRight, Clock, CheckCircle2, Circle, Flag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Flag } from 'lucide-react';
 
 const QuizPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +14,7 @@ const QuizPage: React.FC = () => {
   const {
     quizData,
     testSelection,
+    sessionId,
     currentQuestionIndex,
     answers,
     isFirstQuestion,
@@ -45,7 +46,7 @@ const QuizPage: React.FC = () => {
   };
 
   const handleSubmitQuiz = async () => {
-    if (!testSelection) return;
+    if (!testSelection || !sessionId) return;
 
     const submission = {
       topicId: testSelection.topicId,
@@ -53,6 +54,7 @@ const QuizPage: React.FC = () => {
         acc[answer.questionId] = answer.selectedOptionId;
         return acc;
       }, {} as Record<string, string>),
+      sessionId: sessionId,
     };
 
     try {

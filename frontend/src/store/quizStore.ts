@@ -6,6 +6,7 @@ interface QuizStore extends QuizState {
   quizData: QuizData | null;
   testSelection: TestSelection | null;
   quizResult: QuizResult | null;
+  sessionId: string | null;
   
   // Actions
   setTestSelection: (selection: TestSelection) => void;
@@ -32,6 +33,7 @@ export const useQuizStore = create<QuizStore>((set, get) => ({
   quizData: null,
   testSelection: null,
   quizResult: null,
+  sessionId: null,
   isFirstQuestion: true,
   isLastQuestion: false,
   progressPercentage: 0,
@@ -44,6 +46,7 @@ export const useQuizStore = create<QuizStore>((set, get) => ({
   setQuizData: (data) => {
     set({
       quizData: data,
+      sessionId: data.sessionId,
       currentQuestionIndex: 0,
       answers: [],
       isSubmitted: false,
@@ -114,6 +117,7 @@ export const useQuizStore = create<QuizStore>((set, get) => ({
       quizData: null,
       testSelection: null,
       quizResult: null,
+      sessionId: null,
       isFirstQuestion: true,
       isLastQuestion: false,
       progressPercentage: 0,

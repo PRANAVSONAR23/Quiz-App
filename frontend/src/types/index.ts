@@ -36,6 +36,7 @@ export interface QuizData {
   quizTitle: string;
   quizTimer?: number;
   totalQuestions: number;
+  sessionId: string;
   questions: Question[];
 }
 
@@ -47,12 +48,24 @@ export interface QuizAnswer {
 export interface QuizSubmission {
   topicId: string;
   answers: Record<string, string>; // questionId -> optionId
+  sessionId: string;
+}
+
+export interface QuestionAnalysis {
+  questionId: string;
+  questionText: string;
+  correctOption: string;
+  userSelectedOption: string | null;
+  isCorrect: boolean;
+  options: Option[];
 }
 
 export interface QuizResult {
   score: number;
   totalQuestions: number;
+  attemptedQuestions: number;
   percentage: string;
+  questionAnalysis: QuestionAnalysis[];
 }
 
 export interface ApiResponse<T = any> {

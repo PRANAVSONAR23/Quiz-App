@@ -23,6 +23,7 @@ const ResultsPage: React.FC = () => {
   const percentage = parseFloat(quizResult.percentage);
   const correctAnswers = quizResult.score;
   const incorrectAnswers = quizResult.totalQuestions - quizResult.score;
+  const attemptedQuestions = quizResult.attemptedQuestions;
 
   const getPerformanceMessage = () => {
     if (percentage >= 90) return { message: "Outstanding!", icon: Trophy, color: "text-yellow-600" };
@@ -166,6 +167,10 @@ const ResultsPage: React.FC = () => {
                   <span className="font-medium">{quizResult.totalQuestions}</span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-gray-600">Attempted:</span>
+                  <span className="font-medium">{attemptedQuestions}/{quizResult.totalQuestions}</span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-gray-600">Your Score:</span>
                   <span className="font-medium">{correctAnswers}/{quizResult.totalQuestions}</span>
                 </div>
@@ -207,6 +212,120 @@ const ResultsPage: React.FC = () => {
               </Card>
             )}
           </div>
+        </div>
+
+        {/* Question Analysis Section */}
+        <div className="max-w-4xl mx-auto mt-8">
+          <Card className="shadow-xl border-0">
+            <CardHeader className="bg-gradient-to-r from-gray-600 to-gray-700 text-white">
+              <CardTitle className="text-2xl flex items-center">
+                <Target className="mr-3 h-6 w-6" />
+                Question Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                {quizResult.questionAnalysis.map((analysis, index) => (
+                  <div key={analysis.questionId} className="border rounded-lg p-6 bg-gray-50">
+                    {/* Question Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                          Question {index + 1}
+                        </h3>
+                        <p className="text-gray-700 mb-4">{analysis.questionText}</p>
+                      </div>
+                      <div className="ml-4">
+                        {analysis.isCorrect ? (
+                          <div className="flex items-center text-green-600">
+                            <CheckCircle2 className="h-6 w-6 mr-1" />
+                            <span className="font-semibold">Correct</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center text-red-600">
+                            <XCircle className="h-6 w-6 mr-1" />
+                            <span className="font-semibold">
+                              {analysis.userSelectedOption ? 'Incorrect' : 'Not Attempted'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Options */}
+                    <div className="grid gap-3">
+                      {analysis.options.map((option, optionIndex) => {
+                        const isCorrect = option.optionId === analysis.correctOption;
+                        const isUserSelected = option.optionId === analysis.userSelectedOption;
+                        const optionLetter = String.fromCharCode(65 + optionIndex); // A, B, C, D
+                        
+                        let optionClass = "p-3 rounded-lg border-2 ";
+                        if (isCorrect && isUserSelected) {
+                          // User selected the correct answer
+                          optionClass += "border-green-500 bg-green-100 text-green-800";
+                        } else if (isCorrect) {
+                          // Correct answer (not selected by user)
+                          optionClass += "border-green-400 bg-green-50 text-green-700";
+                        } else if (isUserSelected) {
+                          // User selected wrong answer
+                          optionClass += "border-red-500 bg-red-100 text-red-800";
+                        } else {
+                          // Regular option
+                          optionClass += "border-gray-200 bg-white text-gray-700";
+                        }
+
+                        return (
+                          <div key={option.optionId} className={optionClass}>
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-semibold ${
+                                isCorrect && isUserSelected
+                                  ? 'border-green-600 bg-green-600 text-white'
+                                  : isCorrect
+                                  ? 'border-green-500 bg-green-500 text-white'
+                                  : isUserSelected
+                                  ? 'border-red-600 bg-red-600 text-white'
+                                  : 'border-gray-400 text-gray-600'
+                              }`}>
+                                {optionLetter}
+                              </div>
+                              <span className="font-medium flex-1">{option.optionText}</span>
+                              <div className="flex items-center space-x-2">
+                                {isCorrect && (
+                                  <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full font-semibold">
+                                    Correct Answer
+                                  </span>
+                                )}
+                                {isUserSelected && (
+                                  <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                                    isCorrect 
+                                      ? 'bg-green-200 text-green-800' 
+                                      : 'bg-red-200 text-red-800'
+                                  }`}>
+                                    Your Answer
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Not attempted message */}
+                    {!analysis.userSelectedOption && (
+                      <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="flex items-center text-yellow-800">
+                          <div className="text-sm font-medium">
+                            You did not attempt this question. The correct answer was option {String.fromCharCode(65 + analysis.options.findIndex(opt => opt.optionId === analysis.correctOption))}.
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
