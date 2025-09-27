@@ -179,8 +179,8 @@ npm run dev
 The seeding process populates your database with sample data:
 
 ### What Gets Seeded
-- **10 Topics**: JavaScript, React, Node.js, TypeScript, HTML & CSS, Database Management, System Design, Data Structures, Algorithms, Web Development Basics
-- **15+ Questions**: Multiple choice questions with proper answers
+- **6 Topics**: JavaScript, React, Node.js, System Design, Data Structures, Algorithms
+- **75+ Questions**: Multiple choice questions with proper answers
 - **Difficulty Levels**: Easy, Medium, Hard
 
 ### Seeding Commands
