@@ -60,7 +60,7 @@ class RedisService {
   }
 
   // Topic Questions Caching
-  async setTopicQuestions(topicId: string, difficulty: string, questions: QuestionWithAnalysis[]): Promise<void> {
+  async setTopicQuestions(topicId: string, difficulty: string, questions: QuestionWithAnalysis[] | null): Promise<void> {
     const key = this.getTopicQuestionsKey(topicId, difficulty);
     await this.client.setex(key, this.ttl, JSON.stringify(questions));
   }
