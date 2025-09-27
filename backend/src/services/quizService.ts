@@ -69,9 +69,6 @@ export class QuizService {
     const questions = await prisma.question.findMany({
       where: {
         topicId: data.topicId,
-        topic: {
-          difficulty: data.difficulty
-        }
       },
       take: data.numberOfQuestions
     });

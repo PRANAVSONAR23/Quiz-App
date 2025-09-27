@@ -37,8 +37,8 @@ const TestSelectionPage: React.FC = () => {
       setTestSelection(testConfig);
       setQuizData(quizData);
       navigate('/quiz');
-    } catch (error) {
-      console.error('Failed to start quiz:', error);
+    } catch (error: any) {
+      alert(error?.response?.data?.error || 'Failed to start quiz');
     }
   };
 

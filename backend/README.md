@@ -33,4 +33,4 @@ Content-Type: application/json
 {
   "title": "JavaScript Fundamentals",
   "difficulty": "easy"
-}
+} 
