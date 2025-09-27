@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useQuizStore } from '@/store/quizStore';
 import { useSubmitQuiz } from '@/services/queries';
-import { ChevronLeft, ChevronRight, Clock, Flag } from 'lucide-react';
+import { useCountdownTimer } from '@/hooks/useCountdownTimer';
+import Timer from '@/components/Timer';
+import { ChevronLeft, ChevronRight, Flag, Clock } from 'lucide-react';
 
 const QuizPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,7 +27,42 @@ const QuizPage: React.FC = () => {
     previousQuestion,
     setCurrentQuestion,
     setQuizResult,
+    updateTimeRemaining,
   } = useQuizStore();
+
+  // Handle auto-submission when timer expires
+  const handleTimerExpire = useCallback(async () => {
+    if (!testSelection || !sessionId) return;
+
+    const submission = {
+      topicId: testSelection.topicId,
+      answers: answers.reduce((acc, answer) => {
+        acc[answer.questionId] = answer.selectedOptionId;
+        return acc;
+      }, {} as Record<string, string>),
+      sessionId: sessionId,
+    };
+
+    try {
+      const result = await submitQuizMutation.mutateAsync(submission);
+      setQuizResult(result);
+      navigate('/results');
+    } catch (error) {
+      console.error('Failed to auto-submit quiz:', error);
+    }
+  }, [testSelection, sessionId, answers, submitQuizMutation, setQuizResult, navigate]);
+
+  // Initialize timer
+  const timer = useCountdownTimer({
+    initialSeconds: quizData?.quizTimer || 0,
+    onExpire: handleTimerExpire,
+    autoStart: true,
+  });
+
+  // Update store with timer changes
+  useEffect(() => {
+    updateTimeRemaining(timer.timeRemaining);
+  }, [timer.timeRemaining, updateTimeRemaining]);
 
   useEffect(() => {
     // Redirect if no quiz data
@@ -42,11 +79,15 @@ const QuizPage: React.FC = () => {
   const currentAnswer = answers.find(a => a.questionId === currentQuestion.questionId);
 
   const handleOptionSelect = (optionId: string) => {
+    if (timer.isExpired) return;
     setAnswer(currentQuestion.questionId, optionId);
   };
 
   const handleSubmitQuiz = async () => {
-    if (!testSelection || !sessionId) return;
+    if (!testSelection || !sessionId || timer.isExpired) return;
+
+    // Stop the timer when manually submitting
+    timer.stop();
 
     const submission = {
       topicId: testSelection.topicId,
@@ -67,6 +108,7 @@ const QuizPage: React.FC = () => {
   };
 
   const handleQuestionNavigation = (questionIndex: number) => {
+    if (timer.isExpired) return;
     setCurrentQuestion(questionIndex);
   };
 
@@ -87,12 +129,14 @@ const QuizPage: React.FC = () => {
               <div className="text-sm text-gray-600">
                 <span className="font-medium">{answeredQuestions}</span> / {totalQuestions} answered
               </div>
-              {quizData.quizTimer && (
-                <div className="flex items-center text-blue-600">
-                  <Clock className="h-4 w-4 mr-1" />
-                  <span className="font-medium">30:00</span>
-                </div>
-              )}
+              <Timer
+                timeRemaining={timer.timeRemaining}
+                totalTime={quizData.quizTimer}
+                formatTime={timer.formatTime}
+                getTimeColor={timer.getTimeColor}
+                getWarningLevel={timer.getWarningLevel}
+                className="flex-shrink-0"
+              />
             </div>
           </div>
           
@@ -142,7 +186,8 @@ const QuizPage: React.FC = () => {
                     <button
                       key={option.optionId}
                       onClick={() => handleOptionSelect(option.optionId)}
-                      className={`w-full p-4 text-left rounded-lg border-2 transition-all duration-200 ${
+                      disabled={timer.isExpired}
+                      className={`w-full p-4 text-left rounded-lg border-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                         isSelected
                           ? 'border-blue-500 bg-blue-50 shadow-md'
                           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
@@ -168,7 +213,7 @@ const QuizPage: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={previousQuestion}
-                  disabled={isFirstQuestion}
+                  disabled={isFirstQuestion || timer.isExpired}
                   className="flex items-center"
                 >
                   <ChevronLeft className="h-4 w-4 mr-1" />
@@ -179,7 +224,8 @@ const QuizPage: React.FC = () => {
                   <Button
                     variant="outline"
                     onClick={() => setShowSubmitDialog(true)}
-                    className="flex items-center text-green-600 border-green-600 hover:bg-green-50"
+                    disabled={timer.isExpired}
+                    className="flex items-center text-green-600 border-green-600 hover:bg-green-50 disabled:text-gray-400 disabled:border-gray-300"
                   >
                     <Flag className="h-4 w-4 mr-1" />
                     Submit Quiz
@@ -188,6 +234,7 @@ const QuizPage: React.FC = () => {
                   {!isLastQuestion && (
                     <Button
                       onClick={nextQuestion}
+                      disabled={timer.isExpired}
                       className="flex items-center"
                     >
                       Next
@@ -216,7 +263,8 @@ const QuizPage: React.FC = () => {
                     <button
                       key={question.questionId}
                       onClick={() => handleQuestionNavigation(index)}
-                      className={`w-10 h-10 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                      disabled={timer.isExpired}
+                      className={`w-10 h-10 rounded-lg text-sm font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                         isCurrent
                           ? 'bg-blue-600 text-white shadow-md'
                           : isAnswered
@@ -261,6 +309,14 @@ const QuizPage: React.FC = () => {
                 You have answered {answeredQuestions} out of {totalQuestions} questions.
                 {answeredQuestions < totalQuestions && ' Unanswered questions will be marked as incorrect.'}
               </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-800 text-sm">Time Remaining:</span>
+                  <span className={`font-semibold ${timer.getTimeColor(timer.timeRemaining, quizData.quizTimer)}`}>
+                    {timer.formatTime(timer.timeRemaining)}
+                  </span>
+                </div>
+              </div>
               <p className="text-gray-600 mb-6">
                 Are you sure you want to submit your quiz?
               </p>
@@ -274,12 +330,34 @@ const QuizPage: React.FC = () => {
                 </Button>
                 <Button
                   onClick={handleSubmitQuiz}
-                  disabled={submitQuizMutation.isPending}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  disabled={submitQuizMutation.isPending || timer.isExpired}
+                  className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
                 >
-                  {submitQuizMutation.isPending ? 'Submitting...' : 'Submit'}
+                  {submitQuizMutation.isPending ? 'Submitting...' : timer.isExpired ? 'Time Expired' : 'Submit'}
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Time Expired Overlay */}
+      {timer.isExpired && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader className="bg-red-50 border-b border-red-200">
+              <CardTitle className="text-red-800 flex items-center">
+                <Clock className="h-5 w-5 mr-2" />
+                Time Expired
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <p className="text-gray-600 mb-4 text-center">
+                Your quiz time has expired and has been automatically submitted.
+              </p>
+              <p className="text-sm text-gray-500 text-center">
+                Redirecting to results...
+              </p>
             </CardContent>
           </Card>
         </div>

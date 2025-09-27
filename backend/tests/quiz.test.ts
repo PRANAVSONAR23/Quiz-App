@@ -259,6 +259,7 @@ describe('Quiz API', () => {
       expect(response.body.data.questions).toHaveLength(1);
       expect(response.body.data.sessionId).toBeDefined();
       expect(response.body.data.totalQuestions).toBe(1);
+      expect(response.body.data.quizTimer).toBe(60); // 1 question * 2 minutes * 60 seconds
       expect(mockRedisSetQuizSession).toHaveBeenCalled();
     });
 
@@ -285,6 +286,7 @@ describe('Quiz API', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.questions).toHaveLength(1);
+      expect(response.body.data.quizTimer).toBe(60); // 1 question * 2 minutes * 60 seconds
       expect(mockQuestionFindMany).not.toHaveBeenCalled(); // Should not query DB for questions
       expect(mockRedisSetTopicQuestions).not.toHaveBeenCalled(); // Should not cache again
     });
@@ -315,6 +317,137 @@ describe('Quiz API', () => {
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBe('Not enough questions available for the specified difficulty');
+    });
+
+    it('should calculate timer correctly for multiple questions', async () => {
+      const mockTopic = { id: 'topic1', title: 'Math', difficulty: Difficulty.EASY, createdAt: new Date() };
+      const mockQuestions = [
+        {
+          id: 'q1',
+          questionText: 'What is 2+2?',
+          questionImage: null,
+          options: JSON.stringify([{ optionId: 'a', optionText: '4' }, { optionId: 'b', optionText: '5' }]),
+          correctOption: 'a',
+          topicId: 'topic1',
+          createdAt: new Date(),
+        },
+        {
+          id: 'q2',
+          questionText: 'What is 3+3?',
+          questionImage: null,
+          options: JSON.stringify([{ optionId: 'a', optionText: '6' }, { optionId: 'b', optionText: '7' }]),
+          correctOption: 'a',
+          topicId: 'topic1',
+          createdAt: new Date(),
+        },
+        {
+          id: 'q3',
+          questionText: 'What is 4+4?',
+          questionImage: null,
+          options: JSON.stringify([{ optionId: 'a', optionText: '8' }, { optionId: 'b', optionText: '9' }]),
+          correctOption: 'a',
+          topicId: 'topic1',
+          createdAt: new Date(),
+        },
+        {
+          id: 'q4',
+          questionText: 'What is 5+5?',
+          questionImage: null,
+          options: JSON.stringify([{ optionId: 'a', optionText: '10' }, { optionId: 'b', optionText: '11' }]),
+          correctOption: 'a',
+          topicId: 'topic1',
+          createdAt: new Date(),
+        },
+        {
+          id: 'q5',
+          questionText: 'What is 6+6?',
+          questionImage: null,
+          options: JSON.stringify([{ optionId: 'a', optionText: '12' }, { optionId: 'b', optionText: '13' }]),
+          correctOption: 'a',
+          topicId: 'topic1',
+          createdAt: new Date(),
+        },
+      ];
+      
+      mockTopicFindUnique.mockResolvedValue(mockTopic);
+      mockRedisGetTopicQuestions.mockResolvedValue(null);
+      mockQuestionFindMany.mockResolvedValue(mockQuestions);
+      mockRedisSetTopicQuestions.mockResolvedValue(undefined);
+      mockRedisSetQuizSession.mockResolvedValue(undefined);
+
+      const response = await request
+        .post('/quiz/start')
+        .send({ topicId: 'topic1', numberOfQuestions: 5, difficulty: Difficulty.EASY });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.totalQuestions).toBe(5);
+      expect(response.body.data.quizTimer).toBe(300); // 5 questions * 2 minutes * 60 seconds = 600 seconds
+      expect(response.body.data.questions).toHaveLength(5);
+    });
+
+    it('should calculate timer correctly for 10 questions', async () => {
+      const mockTopic = { id: 'topic1', title: 'Math', difficulty: Difficulty.MEDIUM, createdAt: new Date() };
+      // Create 10 mock questions
+      const mockQuestions = Array.from({ length: 10 }, (_, i) => ({
+        id: `q${i + 1}`,
+        questionText: `Question ${i + 1}`,
+        questionImage: null,
+        options: JSON.stringify([
+          { optionId: 'a', optionText: 'Option A' },
+          { optionId: 'b', optionText: 'Option B' }
+        ]),
+        correctOption: 'a',
+        topicId: 'topic1',
+        createdAt: new Date(),
+      }));
+      
+      mockTopicFindUnique.mockResolvedValue(mockTopic);
+      mockRedisGetTopicQuestions.mockResolvedValue(null);
+      mockQuestionFindMany.mockResolvedValue(mockQuestions);
+      mockRedisSetTopicQuestions.mockResolvedValue(undefined);
+      mockRedisSetQuizSession.mockResolvedValue(undefined);
+
+      const response = await request
+        .post('/quiz/start')
+        .send({ topicId: 'topic1', numberOfQuestions: 10, difficulty: Difficulty.MEDIUM });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.totalQuestions).toBe(10);
+      expect(response.body.data.quizTimer).toBe(600); // 10 questions * 2 minutes * 60 seconds = 1200 seconds (20 minutes)
+      expect(response.body.data.questions).toHaveLength(10);
+    });
+
+    it('should calculate timer correctly for single question', async () => {
+      const mockTopic = { id: 'topic1', title: 'Math', difficulty: Difficulty.HARD, createdAt: new Date() };
+      const mockQuestions = [
+        {
+          id: 'q1',
+          questionText: 'Hard question',
+          questionImage: null,
+          options: JSON.stringify([{ optionId: 'a', optionText: 'Answer A' }, { optionId: 'b', optionText: 'Answer B' }]),
+          correctOption: 'a',
+          topicId: 'topic1',
+          createdAt: new Date(),
+        },
+      ];
+      
+      mockTopicFindUnique.mockResolvedValue(mockTopic);
+      mockRedisGetTopicQuestions.mockResolvedValue(null);
+      mockQuestionFindMany.mockResolvedValue(mockQuestions);
+      mockRedisSetTopicQuestions.mockResolvedValue(undefined);
+      mockRedisSetQuizSession.mockResolvedValue(undefined);
+
+      const response = await request
+        .post('/quiz/start')
+        .send({ topicId: 'topic1', numberOfQuestions: 1, difficulty: Difficulty.HARD });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.totalQuestions).toBe(1);
+      expect(response.body.data.quizTimer).toBe(60); // 1 question * 2 minutes * 60 seconds = 120 seconds
+      expect(response.body.data.questions).toHaveLength(1);
     });
   });
 

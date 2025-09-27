@@ -17,6 +17,7 @@ interface QuizStore extends QuizState {
   previousQuestion: () => void;
   setQuizResult: (result: QuizResult) => void;
   resetQuiz: () => void;
+  updateTimeRemaining: (seconds: number) => void;
   
   // Derived state
   isFirstQuestion: boolean;
@@ -106,6 +107,10 @@ export const useQuizStore = create<QuizStore>((set, get) => ({
 
   setQuizResult: (result) => {
     set({ quizResult: result, isSubmitted: true });
+  },
+
+  updateTimeRemaining: (seconds) => {
+    set({ timeRemaining: seconds });
   },
 
   resetQuiz: () => {

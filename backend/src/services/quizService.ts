@@ -135,10 +135,14 @@ export class QuizService {
       options: q.options
     }));
 
+    // Calculate timer: 2 minutes per question (in seconds)
+    const quizTimer = data.numberOfQuestions * 1 * 60; // 2 minutes * 60 seconds
+
     return {
       message: 'Quiz started successfully',
       quizTitle: topic.title,
       totalQuestions: data.numberOfQuestions,
+      quizTimer,
       sessionId,
       questions: questionResponses
     };

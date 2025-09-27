@@ -34,7 +34,7 @@ export interface QuizConfig {
 export interface QuizData {
   message: string;
   quizTitle: string;
-  quizTimer?: number;
+  quizTimer: number; // Timer in seconds
   totalQuestions: number;
   sessionId: string;
   questions: Question[];

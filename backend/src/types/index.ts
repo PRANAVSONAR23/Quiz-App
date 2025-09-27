@@ -37,7 +37,7 @@ export interface SubmitQuizRequest {
 export interface QuizResponse {
   message: string;
   quizTitle: string;
-  quizTimer?: number;
+  quizTimer: number; // Timer in seconds (2 minutes * numberOfQuestions)
   totalQuestions: number;
   sessionId: string;
   questions: QuestionResponse[];
