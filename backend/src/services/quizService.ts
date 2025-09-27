@@ -72,7 +72,7 @@ export class QuizService {
     }
 
     // Check if we have cached questions for this topic/difficulty
-    let allQuestions = await redisService.getTopicQuestions(data.topicId, data.difficulty);
+    let allQuestions: QuestionWithAnalysis[] | null = await redisService.getTopicQuestions(data.topicId, data.difficulty);
     
     if (!allQuestions) {
       // Fetch all questions from database for this topic/difficulty
@@ -83,7 +83,7 @@ export class QuizService {
       });
 
       // Transform to our format and cache
-      allQuestions = dbQuestions.map(q => ({
+      allQuestions = dbQuestions.map((q: any) => ({
         id: q.id,
         questionText: q.questionText,
         questionImage: q.questionImage || undefined,
@@ -93,6 +93,11 @@ export class QuizService {
 
       // Cache the questions for this topic/difficulty
       await redisService.setTopicQuestions(data.topicId, data.difficulty, allQuestions);
+    }
+
+    // Ensure allQuestions is not null before proceeding
+    if (!allQuestions || allQuestions.length === 0) {
+      throw new Error('INSUFFICIENT_QUESTIONS');
     }
 
     const totalQuestionsInTopic = allQuestions.length;

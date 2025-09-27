@@ -96,7 +96,7 @@ API_BASE_URL=http://localhost:5000/api/v1
 ### 3. Start All Services
 ```bash
 npm install
-npm run docker:dev
+npm run docker:up
 ```
 
 This starts:
@@ -106,7 +106,7 @@ This starts:
 
 ### 4. Seed the Database
 ```bash
-# In a new terminal (keep Docker running)
+# Same terminal (docker:up runs in detached mode)
 npm run seed
 ```
 
@@ -447,7 +447,7 @@ const timer = useCountdownTimer({
 ### Docker Commands
 ```bash
 # Start all services
-npm run docker:dev
+npm run docker:up
 
 # Stop all services
 npm run docker:down
@@ -493,7 +493,8 @@ npm run test:watch   # Run tests in watch mode
 npm run db:migrate   # Run database migrations
 npm run db:studio    # Open Prisma Studio
 npm run seed         # Seed database
-npm run docker:dev   # Start Docker development environment
+npm run docker:up    # Start Docker services in detached mode
+npm run docker:dev   # Start Docker with rebuild (foreground mode)
 ```
 
 #### Frontend Scripts
