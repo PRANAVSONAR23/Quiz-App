@@ -116,7 +116,7 @@ const QuizPage: React.FC = () => {
   const totalQuestions = quizData.questions.length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-100 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-100 flex flex-col font-sans">
       {/* Header */}
       <div className="bg-white shadow-lg border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 py-6">

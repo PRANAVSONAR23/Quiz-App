@@ -70,7 +70,7 @@ const TestSelectionPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-100 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-100 flex items-center justify-center p-6 font-sans font-semibold">
       <div className="w-full max-w-2xl">
         <div className="text-center mb-10">
           <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Quiz Setup</h1>
