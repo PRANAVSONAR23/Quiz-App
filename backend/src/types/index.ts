@@ -28,18 +28,20 @@ export enum Difficulty {
     difficulty: Difficulty;
   }
   
-  export interface SubmitQuizRequest {
-    topicId: string;
-    answers: Record<string, string>; // questionId -> optionId
-  }
+export interface SubmitQuizRequest {
+  topicId: string;
+  sessionId: string;
+  answers: Record<string, string>; // questionId -> optionId
+}
   
-  export interface QuizResponse {
-    message: string;
-    quizTitle: string;
-    quizTimer?: number;
-    totalQuestions: number;
-    questions: QuestionResponse[];
-  }
+export interface QuizResponse {
+  message: string;
+  quizTitle: string;
+  quizTimer?: number;
+  totalQuestions: number;
+  sessionId: string;
+  questions: QuestionResponse[];
+}
   
   export interface QuestionResponse {
     questionId: string;
@@ -48,15 +50,49 @@ export enum Difficulty {
     options: Option[];
   }
   
-  export interface SubmitQuizResponse {
-    score: number;
-    totalQuestions: number;
-    percentage: string;
-  }
+export interface SubmitQuizResponse {
+  score: number;
+  totalQuestions: number;
+  attemptedQuestions: number;
+  percentage: string;
+  questionAnalysis: QuestionAnalysis[];
+}
   
-  export interface ApiResponse<T = any> {
-    success: boolean;
-    message: string;
-    data?: T;
-    error?: string;
-  }
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data?: T;
+  error?: string;
+}
+
+// Enhanced types for Redis caching and result analysis
+export interface QuestionAnalysis {
+  questionId: string;
+  questionText: string;
+  questionImage?: string;
+  correctOption: string;
+  userSelectedOption: string | null;
+  isCorrect: boolean;
+  options: Option[];
+}
+
+export interface QuestionWithAnalysis {
+  id: string;
+  questionText: string;
+  questionImage?: string;
+  options: Option[];
+  correctOption: string;
+}
+
+export interface QuizSessionData {
+  sessionId: string;
+  topicId: string;
+  topicTitle: string;
+  difficulty: Difficulty;
+  requestedQuestions: number;
+  totalQuestionsInTopic: number;
+  allQuestions: QuestionWithAnalysis[];
+  selectedQuestions: QuestionWithAnalysis[];
+  startTime: string;
+  expiresAt: string;
+}

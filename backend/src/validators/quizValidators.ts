@@ -69,6 +69,12 @@ export const validateSubmitQuiz = [
     .notEmpty()
     .withMessage('Topic ID is required'),
   
+  body('sessionId')
+    .notEmpty()
+    .withMessage('Session ID is required')
+    .isUUID(4)
+    .withMessage('Session ID must be a valid UUID'),
+  
   body('answers')
     .isObject()
     .withMessage('Answers must be an object')

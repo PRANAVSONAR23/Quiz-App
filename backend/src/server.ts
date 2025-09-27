@@ -1,5 +1,6 @@
 import app from './app';
 import prisma from './utils/database';
+import redisService from './services/redisService';
 
 const PORT = process.env.PORT || 3000;
 
@@ -8,6 +9,10 @@ async function startServer() {
     // Test database connection
     await prisma.$connect();
     console.log('✅ Database connected successfully');
+
+    // Test Redis connection
+    await redisService.connect();
+    console.log('✅ Redis connected successfully');
 
     // Start server
     const server = app.listen(PORT, () => {
@@ -22,6 +27,7 @@ async function startServer() {
         console.log('Process terminated');
       });
       await prisma.$disconnect();
+      await redisService.disconnect();
     });
 
     process.on('SIGINT', async () => {
@@ -30,11 +36,13 @@ async function startServer() {
         console.log('Process terminated');
       });
       await prisma.$disconnect();
+      await redisService.disconnect();
     });
 
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     await prisma.$disconnect();
+    await redisService.disconnect();
     process.exit(1);
   }
 }

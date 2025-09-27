@@ -77,6 +77,14 @@ export class QuizController {
         sendError(res, 'Failed to submit quiz', 400, 'Invalid question IDs or topic mismatch');
         return;
       }
+      if (error.message === 'INVALID_SESSION') {
+        sendError(res, 'Failed to submit quiz', 400, 'Invalid or expired session');
+        return;
+      }
+      if (error.message === 'TOPIC_MISMATCH') {
+        sendError(res, 'Failed to submit quiz', 400, 'Topic mismatch with session');
+        return;
+      }
       next(error);
     }
   }

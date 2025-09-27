@@ -1,10 +1,15 @@
 import prisma from '../utils/database';
+import redisService from './redisService';
+import { v4 as uuidv4 } from 'uuid';
 import { 
   CreateTopicRequest, 
   CreateQuestionRequest, 
   TakeQuizRequest, 
   SubmitQuizRequest,
   QuestionResponse,
+  QuestionWithAnalysis,
+  QuizSessionData,
+  QuestionAnalysis,
   Option 
 } from '../types';
 
@@ -66,60 +71,123 @@ export class QuizService {
       throw new Error('TOPIC_NOT_FOUND');
     }
 
-    const questions = await prisma.question.findMany({
-      where: {
-        topicId: data.topicId,
-      },
-      take: data.numberOfQuestions
-    });
+    // Check if we have cached questions for this topic/difficulty
+    let allQuestions = await redisService.getTopicQuestions(data.topicId, data.difficulty);
+    
+    if (!allQuestions) {
+      // Fetch all questions from database for this topic/difficulty
+      const dbQuestions = await prisma.question.findMany({
+        where: {
+          topicId: data.topicId,
+        }
+      });
 
-    if (questions.length < data.numberOfQuestions) {
+      // Transform to our format and cache
+      allQuestions = dbQuestions.map(q => ({
+        id: q.id,
+        questionText: q.questionText,
+        questionImage: q.questionImage || undefined,
+        options: JSON.parse(q.options as string) as Option[],
+        correctOption: q.correctOption
+      }));
+
+      // Cache the questions for this topic/difficulty
+      await redisService.setTopicQuestions(data.topicId, data.difficulty, allQuestions);
+    }
+
+    const totalQuestionsInTopic = allQuestions.length;
+
+    if (totalQuestionsInTopic < data.numberOfQuestions) {
       throw new Error('INSUFFICIENT_QUESTIONS');
     }
 
-    const questionResponses: QuestionResponse[] = questions.map(q => ({
+    // Randomly select the requested number of questions
+    const shuffled = [...allQuestions].sort(() => 0.5 - Math.random());
+    const selectedQuestions = shuffled.slice(0, data.numberOfQuestions);
+
+    // Generate unique session ID
+    const sessionId = uuidv4();
+    const startTime = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + parseInt(process.env.REDIS_TTL || '7200') * 1000).toISOString();
+
+    // Create quiz session data
+    const sessionData: QuizSessionData = {
+      sessionId,
+      topicId: data.topicId,
+      topicTitle: topic.title,
+      difficulty: data.difficulty,
+      requestedQuestions: data.numberOfQuestions,
+      totalQuestionsInTopic,
+      allQuestions,
+      selectedQuestions,
+      startTime,
+      expiresAt
+    };
+
+    // Store session in Redis
+    await redisService.setQuizSession(sessionId, sessionData);
+
+    // Prepare response (without correct answers)
+    const questionResponses: QuestionResponse[] = selectedQuestions.map(q => ({
       questionId: q.id,
       questionText: q.questionText,
-      questionImage: q.questionImage || undefined,
-      options: JSON.parse(q.options as string) as Option[]
+      questionImage: q.questionImage,
+      options: q.options
     }));
 
     return {
       message: 'Quiz started successfully',
       quizTitle: topic.title,
-      totalQuestions: questions.length,
+      totalQuestions: data.numberOfQuestions,
+      sessionId,
       questions: questionResponses
     };
   }
 
   async submitQuiz(data: SubmitQuizRequest) {
-    const questionIds = Object.keys(data.answers);
-    const questions = await prisma.question.findMany({
-      where: {
-        id: { in: questionIds },
-        topicId: data.topicId
-      }
+    // Retrieve quiz session from Redis
+    const sessionData = await redisService.getQuizSession(data.sessionId);
+    
+    if (!sessionData) {
+      throw new Error('INVALID_SESSION');
+    }
+
+    if (sessionData.topicId !== data.topicId) {
+      throw new Error('TOPIC_MISMATCH');
+    }
+
+    const { selectedQuestions,requestedQuestions } = sessionData;
+    
+    // Create detailed analysis for each question
+    const questionAnalysis: QuestionAnalysis[] = selectedQuestions.map(question => {
+      const userSelectedOption = data.answers[question.id] || null;
+      const isCorrect = userSelectedOption === question.correctOption;
+
+      return {
+        questionId: question.id,
+        questionText: question.questionText,
+        questionImage: question.questionImage,
+        correctOption: question.correctOption,
+        userSelectedOption,
+        isCorrect,
+        options: question.options
+      };
     });
 
-    if (questions.length !== questionIds.length) {
-      throw new Error('INVALID_QUESTIONS');
-    }
+    // Calculate scores
+    const score = questionAnalysis.filter(q => q.isCorrect).length;
+    const attemptedQuestions = Object.keys(data.answers).length;
+    const percentage = Math.round((score / requestedQuestions) * 100);
 
-    let score = 0;
-    for (const question of questions) {
-      const userAnswer = data.answers[question.id];
-      if (userAnswer === question.correctOption) {
-        score++;
-      }
-    }
-
-    const totalQuestions = questions.length;
-    const percentage = Math.round((score / totalQuestions) * 100);
+    // Clean up session after use (optional - could keep for review)
+    await redisService.deleteQuizSession(data.sessionId);
 
     return {
       score,
-      totalQuestions,
-      percentage: `${percentage}%`
+      totalQuestions: requestedQuestions, // Total questions in the topic
+      attemptedQuestions: attemptedQuestions, // Questions in this quiz attempt
+      percentage: `${percentage}%`,
+      questionAnalysis
     };
   }
 
