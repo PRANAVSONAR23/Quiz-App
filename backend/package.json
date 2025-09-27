@@ -13,6 +13,8 @@
     "db:migrate": "npx prisma migrate dev",
     "db:studio": "npx prisma studio",
     "db:seed": "npx prisma db seed",
+    "seed": "ts-node src/seed.ts",
+    "seed:dev": "nodemon --exec ts-node src/seed.ts",
     "docker:build": "docker build -t quiz-backend .",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
@@ -25,6 +27,7 @@
   "description": "",
   "dependencies": {
     "@prisma/client": "^6.16.2",
+    "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
@@ -39,6 +42,7 @@
     "uuid": "^10.0.0"
   },
   "devDependencies": {
+    "@types/axios": "^0.9.36",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
