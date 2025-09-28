@@ -16,7 +16,7 @@ A modern, full-stack quiz application built with best practices, featuring a pro
 - **Best Practices**: Clean architecture, validation, error handling, and security
 
 ## 📁 Project Overview
-### Click the below Image to see the Working Demo lomm video
+### Click the below Image to see the Working Demo loom video
 [![Demo Video](https://upload.wikimedia.org/wikipedia/commons/4/40/LOOM-logo.png)](https://www.loom.com/share/5303d28a7c14487ca0bdd0e6873d7343?t=467&sid=bea70ede-f962-4996-b2e9-413c57486860)
 
 ![Project Screenshot](./Quiz-App_Diagram.png)
