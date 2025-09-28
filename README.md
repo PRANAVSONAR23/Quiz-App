@@ -15,6 +15,13 @@ A modern, full-stack quiz application built with best practices, featuring a pro
 - **Responsive Design**: Mobile-friendly interface
 - **Best Practices**: Clean architecture, validation, error handling, and security
 
+## 📁 Project Overview
+[![Demo Video](https://upload.wikimedia.org/wikipedia/commons/4/40/LOOM-logo.png)](https://www.loom.com/share/5303d28a7c14487ca0bdd0e6873d7343?t=467&sid=bea70ede-f962-4996-b2e9-413c57486860)
+
+![Project Screenshot](./Quiz-App_Diagram.png)
+
+
+
 ## 📁 Project Structure
 
 ```
@@ -228,6 +235,10 @@ npm test -- --coverage
 - Services: 95%+
 - Routes: 100%
 - Validators: 100%
+
+### Test Result
+![Project Screenshot](./testresult.png)
+
 
 ## 📊 API Documentation
 
